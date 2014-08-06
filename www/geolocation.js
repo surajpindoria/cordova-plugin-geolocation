@@ -29,6 +29,8 @@ var timers = {};   // list of timers in use
 
 // Returns default params, overrides if provided with values
 function parseParameters(options) {
+    console.log('parseParameters');
+
     var opt = {
         maximumAge: 0,
         enableHighAccuracy: false,
@@ -36,20 +38,33 @@ function parseParameters(options) {
     };
 
     if (options) {
+        console.log('options');
         if (options.maximumAge !== undefined && !isNaN(options.maximumAge) && options.maximumAge > 0) {
+            console.log('first if');
+
             opt.maximumAge = options.maximumAge;
         }
         if (options.enableHighAccuracy !== undefined) {
+            console.log('second if');
+
             opt.enableHighAccuracy = options.enableHighAccuracy;
         }
         if (options.timeout !== undefined && !isNaN(options.timeout)) {
+            console.log('third if');
+
             if (options.timeout < 0) {
+                console.log('timeout < 0');
                 opt.timeout = 0;
             } else {
+                console.log('else');
+
                 opt.timeout = options.timeout;
             }
         }
     }
+
+    console.log('return');
+    console.log(opt);
 
     return opt;
 }
@@ -77,6 +92,9 @@ var geolocation = {
    * @param {PositionOptions} options     The options for getting the position data. (OPTIONAL)
    */
     getCurrentPosition:function(successCallback, errorCallback, options) {
+        console.log('getCurrentPosition');
+        console.log(options);
+
         argscheck.checkArgs('fFO', 'geolocation.getCurrentPosition', arguments);
         options = parseParameters(options);
 
@@ -85,8 +103,10 @@ var geolocation = {
         var timeoutTimer = {timer:null};
 
         var win = function(p) {
+            console.log('win');
             clearTimeout(timeoutTimer.timer);
             if (!(timeoutTimer.timer)) {
+                console.log('timeout');
                 // Timeout already happened, or native fired error callback for
                 // this geo request.
                 // Don't continue with success callback.
@@ -108,6 +128,9 @@ var geolocation = {
             successCallback(pos);
         };
         var fail = function(e) {
+            console.log('fail');
+            console.log(e);
+
             clearTimeout(timeoutTimer.timer);
             timeoutTimer.timer = null;
             var err = new PositionError(e.code, e.message);
@@ -119,26 +142,33 @@ var geolocation = {
         // Check our cached position, if its timestamp difference with current time is less than the maximumAge, then just
         // fire the success callback with the cached position.
         if (geolocation.lastPosition && options.maximumAge && (((new Date()).getTime() - geolocation.lastPosition.timestamp.getTime()) <= options.maximumAge)) {
+            console.log('lastPosition');
             successCallback(geolocation.lastPosition);
         // If the cached position check failed and the timeout was set to 0, error out with a TIMEOUT error object.
         } else if (options.timeout === 0) {
+            console.log('else if');
+
             fail({
                 code:PositionError.TIMEOUT,
                 message:"timeout value in PositionOptions set to 0 and no cached Position object available, or cached Position object's age exceeds provided PositionOptions' maximumAge parameter."
             });
         // Otherwise we have to call into native to retrieve a position.
         } else {
+            console.log('else');
             if (options.timeout !== Infinity) {
+                console.log('!Infinity');
                 // If the timeout value was not set to Infinity (default), then
                 // set up a timeout function that will fire the error callback
                 // if no successful position was retrieved before timeout expired.
                 timeoutTimer.timer = createTimeout(fail, options.timeout);
             } else {
+                console.log('Infinity');
                 // This is here so the check in the win function doesn't mess stuff up
                 // may seem weird but this guarantees timeoutTimer is
                 // always truthy before we call into native
                 timeoutTimer.timer = true;
             }
+
             exec(win, fail, "Geolocation", "getLocation", [options.enableHighAccuracy, options.maximumAge]);
         }
         return timeoutTimer;
